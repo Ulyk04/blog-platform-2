@@ -1,0 +1,77 @@
+import express, { Request, Response } from 'express';
+import { body, validationResult } from 'express-validator';
+import { User } from '../models/User';
+import { auth } from '../middleware/auth';
+
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
+
+const router = express.Router();
+
+// Get current user profile
+router.get('/me', auth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.user?.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user profile
+router.put('/me',
+  auth,
+  [
+    body('username').optional().trim().isLength({ min: 3 }).escape(),
+    body('bio').optional().trim().escape(),
+    body('avatar').optional().trim().isURL()
+  ],
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { username, bio, avatar } = req.body;
+      const user = await User.findById(req.user?.id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (username) user.username = username;
+      if (bio) user.bio = bio;
+      if (avatar) user.avatar = avatar;
+
+      await user.save();
+      res.json(user);
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+
+// Get user by ID
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+export default router; 
