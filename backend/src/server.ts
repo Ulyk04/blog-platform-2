@@ -13,7 +13,7 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// PostgreSQL connection
+
 const pool = new Pool({
   user: process.env.POSTGRES_USER || 'postgres',
   host: process.env.POSTGRES_HOST || 'localhost',
@@ -22,20 +22,19 @@ const pool = new Pool({
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
 });
 
-// Initialize models with pool
 User.initialize(pool);
 Post.initialize(pool);
 
-// Middleware
+
 app.use(cors());
 app.use(express.json());
 
-// Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 
-// Initialize database tables
+
 async function initializeDatabase() {
   try {
     await User.createTable();
@@ -47,7 +46,7 @@ async function initializeDatabase() {
   }
 }
 
-// Start server
+
 app.listen(port, async () => {
   console.log(`Server is running on port ${port}`);
   await initializeDatabase();

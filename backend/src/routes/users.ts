@@ -11,7 +11,7 @@ interface AuthRequest extends Request {
 
 const router = express.Router();
 
-// Get current user profile
+
 router.get('/me', auth, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) {
@@ -29,7 +29,6 @@ router.get('/me', auth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Update user profile
 router.put('/me',
   auth,
   [
@@ -69,7 +68,7 @@ router.put('/me',
   }
 );
 
-// Get user by ID
+
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);

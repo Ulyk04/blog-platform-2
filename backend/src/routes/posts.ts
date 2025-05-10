@@ -77,7 +77,7 @@ router.post('/',
           author_id: req.user.id
         });
 
-        console.log('Post created successfully:', post); // Debug log
+        console.log('Post created successfully:', post); 
         res.status(201).json(post);
       } catch (error) {
         console.error('Error in Post.create:', error);
@@ -87,7 +87,7 @@ router.post('/',
         throw error;
       }
     } catch (error) {
-      console.error('Detailed error creating post:', error); // Detailed error log
+      console.error('Detailed error creating post:', error); 
       res.status(500).json({ 
         message: 'Server error',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -97,7 +97,7 @@ router.post('/',
   }
 );
 
-// Update post
+
 router.put('/:id',
   auth,
   [
@@ -140,7 +140,7 @@ router.put('/:id',
   }
 );
 
-// Delete post
+
 router.delete('/:id', auth, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) {
@@ -169,7 +169,7 @@ router.delete('/:id', auth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Like/Unlike post
+
 router.put('/:id/like', auth, async (req: AuthRequest, res: Response) => {
   try {
     const postId = parseInt(req.params.id);
@@ -191,7 +191,7 @@ router.put('/:id/like', auth, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Add comment
+
 router.post('/:id/comments',
   auth,
   [
