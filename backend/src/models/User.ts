@@ -26,11 +26,11 @@ export class User {
     try {
       await client.query('BEGIN');
 
-      // Drop existing table if it exists
+
       await client.query('DROP TABLE IF EXISTS users CASCADE;');
       console.log('Dropped existing users table if it existed');
 
-      // Create users table
+
       const query = `
         CREATE TABLE users (
           id SERIAL PRIMARY KEY,

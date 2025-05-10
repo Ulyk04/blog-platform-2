@@ -6,7 +6,7 @@ import { User } from '../models/User';
 
 const router = express.Router();
 
-// Register user
+
 router.post('/register',
   [
     body('email').isEmail().withMessage('Please enter a valid email'),
@@ -22,20 +22,20 @@ router.post('/register',
 
       const { email, password, username } = req.body;
 
-      // Check if user already exists
+      
       let user = await User.findByEmail(email);
       if (user) {
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      // Create new user
+      
       user = await User.create({
         email,
         password,
         username
       });
 
-      // Create JWT token
+     
       const token = jwt.sign(
         { id: user.id },
         process.env.JWT_SECRET || 'your-secret-key',
@@ -57,7 +57,7 @@ router.post('/register',
   }
 );
 
-// Login user
+
 router.post('/login',
   [
     body('email').isEmail().withMessage('Please enter a valid email'),
@@ -72,19 +72,19 @@ router.post('/login',
 
       const { email, password } = req.body;
 
-      // Check if user exists
+     
       const user = await User.findByEmail(email);
       if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
-      // Check password
+   
       const isMatch = await User.comparePassword(user.password, password);
       if (!isMatch) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
-      // Create JWT token
+    
       const token = jwt.sign(
         { id: user.id },
         process.env.JWT_SECRET || 'your-secret-key',

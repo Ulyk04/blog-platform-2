@@ -11,7 +11,7 @@ interface AuthRequest extends Request {
 
 const router = express.Router();
 
-// Get all posts
+
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const posts = await Post.findAll();
@@ -22,7 +22,7 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-// Get post by ID
+
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const postId = parseInt(req.params.id);
@@ -40,7 +40,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Create post
+
 router.post('/',
   auth,
   [
