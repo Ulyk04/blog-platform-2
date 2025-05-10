@@ -17,7 +17,7 @@ const express_validator_1 = require("express-validator");
 const Post_1 = require("../models/Post");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-// Get all posts
+
 router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const posts = yield Post_1.Post.find()
@@ -30,7 +30,7 @@ router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Get single post
+
 router.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const post = yield Post_1.Post.findById(req.params.id)
@@ -46,7 +46,7 @@ router.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Create post
+
 router.post('/', auth_1.auth, [
     (0, express_validator_1.body)('title').trim().isLength({ min: 1 }).escape(),
     (0, express_validator_1.body)('content').trim().isLength({ min: 1 }).escape()
@@ -71,7 +71,7 @@ router.post('/', auth_1.auth, [
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Update post
+
 router.put('/:id', auth_1.auth, [
     (0, express_validator_1.body)('title').trim().isLength({ min: 1 }).escape(),
     (0, express_validator_1.body)('content').trim().isLength({ min: 1 }).escape()
@@ -100,7 +100,7 @@ router.put('/:id', auth_1.auth, [
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Delete post
+
 router.delete('/:id', auth_1.auth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -119,7 +119,7 @@ router.delete('/:id', auth_1.auth, (req, res) => __awaiter(void 0, void 0, void 
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Like/Unlike post
+
 router.put('/:id/like', auth_1.auth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const post = yield Post_1.Post.findById(req.params.id);
@@ -140,7 +140,7 @@ router.put('/:id/like', auth_1.auth, (req, res) => __awaiter(void 0, void 0, voi
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Add comment
+
 router.post('/:id/comments', auth_1.auth, [
     (0, express_validator_1.body)('content').trim().isLength({ min: 1 }).escape()
 ], (req, res) => __awaiter(void 0, void 0, void 0, function* () {

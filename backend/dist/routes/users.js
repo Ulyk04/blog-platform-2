@@ -17,7 +17,7 @@ const express_validator_1 = require("express-validator");
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-// Get current user profile
+
 router.get('/me', auth_1.auth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -32,7 +32,7 @@ router.get('/me', auth_1.auth, (req, res) => __awaiter(void 0, void 0, void 0, f
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Update user profile
+
 router.put('/me', auth_1.auth, [
     (0, express_validator_1.body)('username').optional().trim().isLength({ min: 3 }).escape(),
     (0, express_validator_1.body)('bio').optional().trim().escape(),
@@ -63,7 +63,7 @@ router.put('/me', auth_1.auth, [
         res.status(500).json({ message: 'Server error' });
     }
 }));
-// Get user by ID
+
 router.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield User_1.User.findById(req.params.id).select('-password');

@@ -39,11 +39,9 @@ export class Post {
     try {
       await client.query('BEGIN');
 
-      // Drop existing table if it exists
       await client.query('DROP TABLE IF EXISTS posts CASCADE;');
       console.log('Dropped existing posts table if it existed');
 
-      // Create posts table
       const query = `
         CREATE TABLE posts (
           id SERIAL PRIMARY KEY,
@@ -75,7 +73,7 @@ export class Post {
     try {
       await client.query('BEGIN');
 
-      // Check if author exists
+  
       const authorCheck = await client.query('SELECT id FROM users WHERE id = $1', [postData.author_id]);
       if (authorCheck.rows.length === 0) {
         throw new Error(`User with id ${postData.author_id} does not exist`);

@@ -79,7 +79,7 @@ const userSchema = new mongoose_1.Schema({
 }, {
     timestamps: true
 });
-// Hash password before saving
+
 userSchema.pre('save', function (next) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!this.isModified('password'))
@@ -94,7 +94,7 @@ userSchema.pre('save', function (next) {
         }
     });
 });
-// Compare password method
+
 userSchema.methods.comparePassword = function (candidatePassword) {
     return __awaiter(this, void 0, void 0, function* () {
         return bcryptjs_1.default.compare(candidatePassword, this.password);
