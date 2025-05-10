@@ -4,7 +4,7 @@ import { User } from '../models/User';
 
 interface AuthRequest extends Request {
   user?: {
-    id: string;
+    id: number;
   };
 }
 
@@ -16,14 +16,8 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
       return res.status(401).json({ message: 'No authentication token, access denied' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: string };
-    const user = await User.findById(decoded.id).select('-password');
-
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-
-    req.user = { id: user._id.toString() };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { id: number };
+    req.user = { id: decoded.id };
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
