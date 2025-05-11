@@ -2,6 +2,9 @@ import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { User } from '../models/User';
 import { auth } from '../middleware/auth';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 interface AuthRequest extends Request {
   user?: {
@@ -11,6 +14,35 @@ interface AuthRequest extends Request {
 
 const router = express.Router();
 
+// Настройка multer для загрузки файлов
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/avatars');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG and GIF are allowed.'));
+    }
+  }
+});
 
 router.get('/me', auth, async (req: AuthRequest, res: Response) => {
   try {
@@ -68,7 +100,6 @@ router.put('/me',
   }
 );
 
-
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
@@ -86,5 +117,43 @@ router.get('/:id', async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+router.post('/me/avatar',
+  auth,
+  upload.single('avatar'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      if (!req.user?.id) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Удаляем старый аватар, если он существует
+      if (user.avatar) {
+        const oldAvatarPath = path.join(__dirname, '../../uploads/avatars', path.basename(user.avatar));
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath);
+        }
+      }
+
+      // Обновляем путь к аватару в базе данных
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      const updatedUser = await User.update(req.user.id, { avatar: avatarUrl });
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
 
 export default router; 

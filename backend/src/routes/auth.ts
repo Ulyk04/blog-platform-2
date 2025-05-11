@@ -15,27 +15,31 @@ router.post('/register',
   ],
   async (req: Request, res: Response) => {
     try {
+      console.log('Received registration request:', req.body);
+      
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.log('Validation errors:', errors.array());
         return res.status(400).json({ errors: errors.array() });
       }
 
       const { email, password, username } = req.body;
+      console.log('Processing registration for:', { email, username });
 
-      
       let user = await User.findByEmail(email);
       if (user) {
+        console.log('User already exists:', email);
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      
+      console.log('Creating new user...');
       user = await User.create({
         email,
         password,
         username
       });
+      console.log('User created successfully:', { id: user.id, email: user.email });
 
-     
       const token = jwt.sign(
         { id: user.id },
         process.env.JWT_SECRET || 'your-secret-key',
@@ -52,7 +56,7 @@ router.post('/register',
       });
     } catch (error) {
       console.error('Registration error:', error);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Server error', error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 );
