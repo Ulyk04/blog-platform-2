@@ -44,15 +44,18 @@ const upload = multer({
   }
 });
 
+// Маршрут для получения текущего пользователя
 router.get('/me', auth, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
     const { password, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
   } catch (error) {
@@ -118,63 +121,47 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/me/avatar',
-  auth,
-  upload.single('avatar'),
-  async (req: AuthRequest, res: Response) => {
-    try {
-      console.log('Received avatar upload request');
-      console.log('Request headers:', req.headers);
-      console.log('Request file:', req.file);
-      console.log('User:', req.user);
-      
-      if (!req.file) {
-        console.log('No file uploaded');
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-
-      if (!req.user?.id) {
-        console.log('User not authenticated');
-        return res.status(401).json({ message: 'User not authenticated' });
-      }
-
-      console.log('Processing avatar upload for user:', req.user.id);
-      
-      const user = await User.findById(req.user.id);
-      if (!user) {
-        console.log('User not found:', req.user.id);
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      // Удаляем старый аватар, если он существует
-      if (user.avatar) {
-        const oldAvatarPath = path.join(__dirname, '../../uploads/avatars', path.basename(user.avatar));
-        if (fs.existsSync(oldAvatarPath)) {
-          fs.unlinkSync(oldAvatarPath);
-        }
-      }
-
-      // Обновляем путь к аватару в базе данных
-      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-      console.log('New avatar URL:', avatarUrl);
-      
-      const updatedUser = await User.update(req.user.id, { avatar: avatarUrl });
-      console.log('User updated successfully');
-
-      // Возвращаем обновленного пользователя без пароля
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      if (error instanceof multer.MulterError) {
-        if (error.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ message: 'File size should be less than 5MB' });
-        }
-        return res.status(400).json({ message: error.message });
-      }
-      res.status(500).json({ message: 'Server error' });
+// Маршрут для загрузки аватара
+router.post('/me/avatar', auth, upload.single('avatar'), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
     }
+
+    if (!req.user?.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Удаляем старый аватар, если он существует
+    if (user.avatar) {
+      const oldAvatarPath = path.join(__dirname, '../../uploads/avatars', path.basename(user.avatar));
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Обновляем путь к аватару в базе данных
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const updatedUser = await User.update(req.user.id, { avatar: avatarUrl });
+
+    // Возвращаем обновленного пользователя без пароля
+    const { password, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'File size should be less than 5MB' });
+      }
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server error' });
   }
-);
+});
 
 export default router; 
