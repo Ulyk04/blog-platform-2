@@ -151,4 +151,17 @@ export class User {
       client.release();
     }
   }
+
+  static async search(query: string): Promise<User[]> {
+    const result = await this.pool.query(
+      `SELECT * FROM users 
+       WHERE username ILIKE $1 
+       OR email ILIKE $1 
+       OR bio ILIKE $1
+       ORDER BY username ASC
+       LIMIT 10`,
+      [`%${query}%`]
+    );
+    return result.rows;
+  }
 } 

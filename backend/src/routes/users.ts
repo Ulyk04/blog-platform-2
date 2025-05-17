@@ -164,4 +164,26 @@ router.post('/me/avatar', auth, upload.single('avatar'), async (req: AuthRequest
   }
 });
 
+// Маршрут для поиска пользователей
+router.get('/search', async (req: Request, res: Response) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+
+    const users = await User.search(query);
+    const usersWithoutPasswords = users.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+
+    res.json(usersWithoutPasswords);
+  } catch (error) {
+    console.error('Error searching users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router; 
