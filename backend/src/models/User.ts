@@ -8,11 +8,17 @@ export interface IUser {
   password: string;
   bio?: string | null;
   avatar?: string | null;
+  role: 'user' | 'admin' | 'moderator';
+  status: 'active' | 'banned' | 'inactive';
+  last_login?: Date | null;
+  followers_count: number;
+  following_count: number;
+  posts_count: number;
   created_at: Date;
   updated_at: Date;
 }
 
-export type CreateUserData = Omit<IUser, 'id' | 'created_at' | 'updated_at'>;
+export type CreateUserData = Omit<IUser, 'id' | 'created_at' | 'updated_at' | 'followers_count' | 'following_count' | 'posts_count'>;
 
 export class User {
   private static pool: Pool;
@@ -26,10 +32,8 @@ export class User {
     try {
       await client.query('BEGIN');
 
-
       await client.query('DROP TABLE IF EXISTS users CASCADE;');
       console.log('Dropped existing users table if it existed');
-
 
       const query = `
         CREATE TABLE users (
@@ -39,6 +43,12 @@ export class User {
           password VARCHAR(255) NOT NULL,
           bio TEXT,
           avatar VARCHAR(255),
+          role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin', 'moderator')),
+          status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'banned', 'inactive')),
+          last_login TIMESTAMP,
+          followers_count INTEGER DEFAULT 0,
+          following_count INTEGER DEFAULT 0,
+          posts_count INTEGER DEFAULT 0,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -155,13 +165,133 @@ export class User {
   static async search(query: string): Promise<User[]> {
     const result = await this.pool.query(
       `SELECT * FROM users 
-       WHERE username ILIKE $1 
+       WHERE (username ILIKE $1 
        OR email ILIKE $1 
-       OR bio ILIKE $1
-       ORDER BY username ASC
-       LIMIT 10`,
-      [`%${query}%`]
+       OR bio ILIKE $1)
+       AND status = 'active'
+       ORDER BY 
+         CASE 
+           WHEN username ILIKE $2 THEN 1
+           WHEN email ILIKE $2 THEN 2
+           ELSE 3
+         END,
+         username ASC
+       LIMIT 20`,
+      [`%${query}%`, `${query}%`]
     );
     return result.rows;
+  }
+
+  static async follow(followerId: number, followingId: number): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Проверяем, не подписан ли уже пользователь
+      const existingFollow = await client.query(
+        'SELECT * FROM user_follows WHERE follower_id = $1 AND following_id = $2',
+        [followerId, followingId]
+      );
+
+      if (existingFollow.rows.length > 0) {
+        throw new Error('Already following this user');
+      }
+
+      // Добавляем подписку
+      await client.query(
+        'INSERT INTO user_follows (follower_id, following_id) VALUES ($1, $2)',
+        [followerId, followingId]
+      );
+
+      // Обновляем счетчики
+      await client.query(
+        'UPDATE users SET followers_count = followers_count + 1 WHERE id = $1',
+        [followingId]
+      );
+      await client.query(
+        'UPDATE users SET following_count = following_count + 1 WHERE id = $1',
+        [followerId]
+      );
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  static async unfollow(followerId: number, followingId: number): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Удаляем подписку
+      await client.query(
+        'DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2',
+        [followerId, followingId]
+      );
+
+      // Обновляем счетчики
+      await client.query(
+        'UPDATE users SET followers_count = followers_count - 1 WHERE id = $1',
+        [followingId]
+      );
+      await client.query(
+        'UPDATE users SET following_count = following_count - 1 WHERE id = $1',
+        [followerId]
+      );
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  static async getFollowers(userId: number): Promise<User[]> {
+    const result = await this.pool.query(
+      `SELECT u.* FROM users u
+       INNER JOIN user_follows f ON u.id = f.follower_id
+       WHERE f.following_id = $1
+       ORDER BY u.username ASC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  static async getFollowing(userId: number): Promise<User[]> {
+    const result = await this.pool.query(
+      `SELECT u.* FROM users u
+       INNER JOIN user_follows f ON u.id = f.following_id
+       WHERE f.follower_id = $1
+       ORDER BY u.username ASC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  static async updateLastLogin(userId: number): Promise<void> {
+    await this.pool.query(
+      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+      [userId]
+    );
+  }
+
+  static async updateStatus(userId: number, status: 'active' | 'banned' | 'inactive'): Promise<void> {
+    await this.pool.query(
+      'UPDATE users SET status = $1 WHERE id = $2',
+      [status, userId]
+    );
+  }
+
+  static async updateRole(userId: number, role: 'user' | 'admin' | 'moderator'): Promise<void> {
+    await this.pool.query(
+      'UPDATE users SET role = $1 WHERE id = $2',
+      [role, userId]
+    );
   }
 } 

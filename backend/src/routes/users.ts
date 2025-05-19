@@ -186,4 +186,97 @@ router.get('/search', async (req: Request, res: Response) => {
   }
 });
 
+// Маршрут для подписки на пользователя
+router.post('/:id/follow', auth, async (req: AuthRequest, res: Response) => {
+  try {
+    const followerId = req.user?.id;
+    const followingId = parseInt(req.params.id);
+
+    if (!followerId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    if (isNaN(followingId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    if (followerId === followingId) {
+      return res.status(400).json({ message: 'Cannot follow yourself' });
+    }
+
+    await User.follow(followerId, followingId);
+    res.json({ message: 'Successfully followed user' });
+  } catch (error) {
+    console.error('Error following user:', error);
+    if (error instanceof Error && error.message === 'Already following this user') {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Маршрут для отписки от пользователя
+router.post('/:id/unfollow', auth, async (req: AuthRequest, res: Response) => {
+  try {
+    const followerId = req.user?.id;
+    const followingId = parseInt(req.params.id);
+
+    if (!followerId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    if (isNaN(followingId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    await User.unfollow(followerId, followingId);
+    res.json({ message: 'Successfully unfollowed user' });
+  } catch (error) {
+    console.error('Error unfollowing user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Маршрут для получения подписчиков пользователя
+router.get('/:id/followers', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    const followers = await User.getFollowers(userId);
+    const followersWithoutPasswords = followers.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+
+    res.json(followersWithoutPasswords);
+  } catch (error) {
+    console.error('Error fetching followers:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Маршрут для получения подписок пользователя
+router.get('/:id/following', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    const following = await User.getFollowing(userId);
+    const followingWithoutPasswords = following.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+
+    res.json(followingWithoutPasswords);
+  } catch (error) {
+    console.error('Error fetching following:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router; 
