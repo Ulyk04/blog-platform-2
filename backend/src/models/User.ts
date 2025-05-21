@@ -8,6 +8,11 @@ export interface IUser {
   password: string;
   bio?: string | null;
   avatar?: string | null;
+  music?: {
+    title: string;
+    artist: string;
+    url: string;
+  };
   role: 'user' | 'admin' | 'moderator';
   status: 'active' | 'banned' | 'inactive';
   last_login?: Date | null;
@@ -43,6 +48,7 @@ export class User {
           password VARCHAR(255) NOT NULL,
           bio TEXT,
           avatar VARCHAR(255),
+          music JSON,
           role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin', 'moderator')),
           status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'banned', 'inactive')),
           last_login TIMESTAMP,
@@ -104,8 +110,8 @@ export class User {
       const hashedPassword = await bcrypt.hash(userData.password, salt);
 
       const query = `
-        INSERT INTO users (username, email, password, bio, avatar)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO users (username, email, password, bio, avatar, music)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *;
       `;
       const values = [
@@ -113,7 +119,8 @@ export class User {
         userData.email,
         hashedPassword,
         userData.bio || null,
-        userData.avatar || null
+        userData.avatar || null,
+        userData.music ? JSON.stringify(userData.music) : null
       ];
       const result: QueryResult<IUser> = await client.query(query, values);
       await client.query('COMMIT');
@@ -143,13 +150,24 @@ export class User {
       const query = `
         UPDATE users 
         SET username = COALESCE($1, username),
-            bio = COALESCE($2, bio),
-            avatar = COALESCE($3, avatar),
+            email = COALESCE($2, email),
+            password = COALESCE($3, password),
+            bio = COALESCE($4, bio),
+            avatar = COALESCE($5, avatar),
+            music = COALESCE($6, music),
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = $4
+        WHERE id = $7
         RETURNING *;
       `;
-      const values = [userData.username, userData.bio, userData.avatar, id];
+      const values = [
+        userData.username,
+        userData.email,
+        userData.password ? await bcrypt.hash(userData.password, 10) : null,
+        userData.bio,
+        userData.avatar,
+        userData.music ? JSON.stringify(userData.music) : null,
+        id
+      ];
       const result: QueryResult<IUser> = await client.query(query, values);
       await client.query('COMMIT');
       return result.rows[0];

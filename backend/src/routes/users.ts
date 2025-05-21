@@ -279,4 +279,60 @@ router.get('/:id/following', async (req: Request, res: Response) => {
   }
 });
 
+// Маршрут для обновления музыки пользователя
+router.put('/me/music',
+  auth,
+  [
+    body('music').optional().isObject(),
+    body('music.title').optional().isString().trim().notEmpty(),
+    body('music.artist').optional().isString().trim().notEmpty(),
+    body('music.url').optional().isString().trim().isURL()
+  ],
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      if (!req.user?.id) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const { music } = req.body;
+      const user = await User.findById(req.user.id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const updatedUser = await User.update(req.user.id, { music });
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user music:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+);
+
+// Маршрут для удаления музыки пользователя
+router.delete('/me/music', auth, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const updatedUser = await User.update(req.user.id, { music: null });
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error removing user music:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router; 
