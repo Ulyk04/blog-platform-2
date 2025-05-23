@@ -1,40 +1,64 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { BookmarksProvider } from './context/BookmarksContext';
+import ThemeToggle from './components/ThemeToggle';
+import Post from './components/Post';
+import BookmarksList from './components/BookmarksList';
 import './App.css';
 
-const ThemeToggle: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
-  
-  return (
-    <button 
-      onClick={toggleTheme}
-      className="theme-toggle"
-    >
-      {theme === 'light' ? '🌙' : '☀️'}
-    </button>
-  );
-};
+// Пример постов
+const samplePosts = [
+  {
+    id: 1,
+    title: "First Post",
+    content: "This is the content of the first post."
+  },
+  {
+    id: 2,
+    title: "Second Post",
+    content: "This is the content of the second post."
+  },
+  {
+    id: 3,
+    title: "Third Post",
+    content: "This is the content of the third post."
+  }
+];
 
 function App() {
+  const [showBookmarks, setShowBookmarks] = useState(false);
+
   return (
     <ThemeProvider>
-      <div className="App">
-        <header className="App-header">
-          <ThemeToggle />
-          <h1>Welcome to React</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
+      <BookmarksProvider>
+        <div className="App">
+          <header className="App-header">
+            <ThemeToggle />
+            <button 
+              className="bookmarks-toggle"
+              onClick={() => setShowBookmarks(!showBookmarks)}
+            >
+              {showBookmarks ? 'Show Posts' : 'Show Bookmarks'}
+            </button>
+            
+            {showBookmarks ? (
+              <BookmarksList />
+            ) : (
+              <div className="posts-list">
+                <h1>Posts</h1>
+                {samplePosts.map(post => (
+                  <Post
+                    key={post.id}
+                    id={post.id}
+                    title={post.title}
+                    content={post.content}
+                  />
+                ))}
+              </div>
+            )}
+          </header>
+        </div>
+      </BookmarksProvider>
     </ThemeProvider>
   );
 }
