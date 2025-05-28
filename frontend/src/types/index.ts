@@ -1,9 +1,9 @@
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
-  bio?: string;
   avatar?: string;
+  bio?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -12,7 +12,7 @@ export interface Post {
   id: number;
   title: string;
   content: string;
-  tag: string;
+  tag?: string;
   author_id: number;
   author?: User;
   created_at: string;
@@ -24,9 +24,7 @@ export interface Post {
 export interface BlogComment {
   id: number;
   content: string;
-  user_id: number;
   user?: User;
-  post_id: number;
   created_at: string;
   updated_at: string;
 }

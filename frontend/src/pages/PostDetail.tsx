@@ -5,15 +5,15 @@ import {
   Typography,
   Box,
   Button,
-  TextField,
   Chip,
   Alert,
   CircularProgress,
 } from '@mui/material';
 import { Favorite, FavoriteBorder, Delete } from '@mui/icons-material';
-import { Post, BlogComment } from '../types';
+import { Post } from '../types';
 import { posts } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import CommentList from '../components/CommentList';
 
 const PostDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,8 +22,6 @@ const PostDetail: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -61,23 +59,6 @@ const PostDetail: React.FC = () => {
     } catch (error) {
       setError('Failed to delete post');
       console.error('Error deleting post:', error);
-    }
-  };
-
-  const handleComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!post || !comment.trim()) return;
-
-    setSubmitting(true);
-    try {
-      const updatedPost = await posts.addComment(post.id.toString(), comment);
-      setPost(updatedPost);
-      setComment('');
-    } catch (error) {
-      setError('Failed to add comment');
-      console.error('Error adding comment:', error);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -149,41 +130,10 @@ const PostDetail: React.FC = () => {
       </Box>
 
       {user && (
-        <Box component="form" onSubmit={handleComment} sx={{ mb: 4 }}>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="Add a comment"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            disabled={submitting}
-            sx={{ mb: 2 }}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={!comment.trim() || submitting}
-          >
-            {submitting ? 'Posting...' : 'Post Comment'}
-          </Button>
-        </Box>
-      )}
-
-      {post.comments && post.comments.length > 0 && (
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Comments
-          </Typography>
-          {post.comments.map((comment: BlogComment) => (
-            <Box key={comment.id} sx={{ mb: 2 }}>
-              <Typography variant="subtitle2">
-                {comment.user?.username || 'Unknown'} • {new Date(comment.created_at).toLocaleDateString()}
-              </Typography>
-              <Typography variant="body2">{comment.content}</Typography>
-            </Box>
-          ))}
-        </Box>
+        <CommentList
+          postId={post.id.toString()}
+          currentUserId={user.id.toString()}
+        />
       )}
     </Container>
   );

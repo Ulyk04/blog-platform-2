@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import postRoutes from './routes/posts';
+import commentRoutes from './routes/commentRoutes';
 import path from 'path';
 
 const app = express();
@@ -33,6 +34,7 @@ console.log('\nRegistering routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentRoutes);
 console.log('Routes registered\n');
 
 // 404 handler
